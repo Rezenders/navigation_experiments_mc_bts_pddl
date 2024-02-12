@@ -33,7 +33,7 @@ repositories:
       version: main
   ontologies/mc_mdl_tomasys:
       type: git
-      url: git@github.com:meta-control/mc_mdl_tomasys.git
+      url: https://github.com/meta-control/mc_mdl_tomasys.git
       version: master
   Pilot-URJC:
     type: git
