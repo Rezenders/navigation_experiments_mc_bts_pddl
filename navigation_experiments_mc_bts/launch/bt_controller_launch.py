@@ -19,8 +19,8 @@ from launch_ros.actions import Node
 def generate_launch_description():
     bt_controller_cmd = Node(
         package='navigation_experiments_mc_bts',
-        node_executable='bt_controller',
-        node_name='bt_controller',
+        executable='bt_controller',
+        name='bt_controller',
         output='screen',
         parameters=[])
 

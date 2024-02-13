@@ -16,17 +16,17 @@
 
 import os
 
-from ament_index_python.packages import get_package_share_directory, get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, EmitEvent
 from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 import launch.events
 import lifecycle_msgs.msg
+
 
 def generate_launch_description():
     # Get the launch directory
@@ -43,7 +43,7 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
-    
+
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
         default_value='',
@@ -96,10 +96,9 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
         remappings=remappings,
         arguments=[urdf])
-    
 
     pcl2laser_cmd = LifecycleNode(
-        package='pointcloud_to_laserscan', 
+        package='pointcloud_to_laserscan',
         executable='pointcloud_to_laserscan_managed',
         name='pointcloud_to_laser',
         remappings=[('cloud_in', '/intel_realsense_r200_depth/points'),
@@ -137,7 +136,7 @@ def generate_launch_description():
         package='mros_contingencies_sim',
         executable='battery_contingency_sim_node',
         output='screen')
-    
+
     components_file_path = (get_package_share_directory('mros_modes_observer') +
         '/params/components.yaml')
 
@@ -146,7 +145,7 @@ def generate_launch_description():
         executable='modes_observer_node',
         parameters=[{'componentsfile': components_file_path}],
         output='screen')
-    
+
     emit_event_to_request_that_laser_resender_configure_transition = EmitEvent(
         event=ChangeState(
             lifecycle_node_matcher=launch.events.matches_action(laser_resender_cmd),
@@ -164,12 +163,12 @@ def generate_launch_description():
         executable='mode_manager',
         parameters=[{'modelfile': shm_model_path}],
         output='screen')
-    
+
     reconfig_time_node = Node(
         package='navigation_experiments_mc_bts_pddl_log',
         executable='reconfig_time',
         output='screen')
-    
+
     ## Used to get logs out of the tests
     ## You need to define the correct log folder
 
@@ -195,11 +194,11 @@ def generate_launch_description():
 
     # Add system modes manager
     ld.add_action(mode_manager_node)
-    
+
     # Add system modes observer node
     ld.add_action(modes_observer_node)
     ld.add_action(reconfig_time_node)
-    
+
     ## Node to log some topics in a csv node
     # ld.add_action(topics_2_csv_node)
 
