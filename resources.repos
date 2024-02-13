@@ -34,7 +34,7 @@ repositories:
   ontologies/mc_mdl_tomasys:
       type: git
       url: https://github.com/meta-control/mc_mdl_tomasys.git
-      version: master
+      version: ros2
   Pilot-URJC:
     type: git
     url: https://github.com/MROS-RobMoSys-ITP/Pilot-URJC.git
@@ -42,7 +42,7 @@ repositories:
   mc_mros_reasoner:
     type: git
     url: https://github.com/meta-control/mc_mros_reasoner.git
-    version: foxy_devel
+    version: 96982656fb03543f09e3b2da574dc444b4d38e8b
   mros_modes_observer:
     type: git
     url: https://github.com/MROS-RobMoSys-ITP/mros_modes_observer.git
