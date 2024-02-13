@@ -42,11 +42,11 @@ repositories:
   mc_mros_reasoner:
     type: git
     url: https://github.com/meta-control/mc_mros_reasoner.git
-    version: 96982656fb03543f09e3b2da574dc444b4d38e8b
+    version: master
   mros_modes_observer:
     type: git
-    url: https://github.com/MROS-RobMoSys-ITP/mros_modes_observer.git
-    version: 6b2f91b78a8645938a8f03610fbc0407318aca6d
+    url: https://github.com/Rezenders/mros_modes_observer.git
+    version: e69be3fa1a2fc010d875ca2bde762a0dc3a867a1
   ros2_planning_system:
     type: git
     url:  https://github.com/IntelligentRoboticsLabs/ros2_planning_system.git
@@ -54,4 +54,4 @@ repositories:
   utils/system_modes:
     type: git
     url:  https://github.com/micro-ROS/system_modes.git
-    version: rose2021
+    version: 682ecb70ecdd981740b618bd1acd23849a2215a6

@@ -1,6 +1,6 @@
 ---
 
-pilot:
+f_navigate:
   ros__parameters:
     type: system
     parts:

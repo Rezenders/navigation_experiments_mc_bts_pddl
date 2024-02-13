@@ -20,7 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "system_modes/srv/change_mode.hpp"
+#include "system_modes_msgs/srv/change_mode.hpp"
 
 using namespace std::chrono_literals;
 
@@ -31,7 +31,7 @@ public:
   : plansys2::ActionExecutorClient("reconfig_system", 500ms)
   {
     mode_ = "";
-    client_ = create_client<system_modes::srv::ChangeMode>("/pilot/change_mode");
+    client_ = create_client<system_modes_msgs::srv::ChangeMode>("/pilot/change_mode");
   }
 
 private:
@@ -45,12 +45,12 @@ private:
 
   bool srvCall()
   {
-    auto request = std::make_shared<system_modes::srv::ChangeMode::Request>();
+    auto request = std::make_shared<system_modes_msgs::srv::ChangeMode::Request>();
     request->mode_name = mode_;
-  
-    while (!client_->wait_for_service(1s)) 
+
+    while (!client_->wait_for_service(1s))
     {
-      if (!rclcpp::ok()) 
+      if (!rclcpp::ok())
       {
         RCLCPP_ERROR(get_logger(), "Interrupted while waiting for the service. Exiting.");
         return false;
@@ -61,7 +61,7 @@ private:
     return true;
   }
 
-  rclcpp::Client<system_modes::srv::ChangeMode>::SharedPtr client_;
+  rclcpp::Client<system_modes_msgs::srv::ChangeMode>::SharedPtr client_;
   std::string mode_;
 };
 

@@ -27,7 +27,7 @@ Reconfigure::Reconfigure(
 : BT::AsyncActionNode(action_name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  client_ = node_->create_client<system_modes::srv::ChangeMode>("/pilot/change_mode");
+  client_ = node_->create_client<system_modes_msgs::srv::ChangeMode>("/pilot/change_mode");
 }
 
 BT::NodeStatus Reconfigure::tick()
@@ -44,14 +44,14 @@ BT::NodeStatus Reconfigure::tick()
     return BT::NodeStatus::FAILURE;
   }
 }
-  
 
-bool Reconfigure::reconfigure_srv_call(std::string new_mode) 
+
+bool Reconfigure::reconfigure_srv_call(std::string new_mode)
 {
-  auto request = std::make_shared<system_modes::srv::ChangeMode::Request>();
+  auto request = std::make_shared<system_modes_msgs::srv::ChangeMode::Request>();
 
   request->mode_name = new_mode;
-  
+
   while (!client_->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(), "Interrupted while waiting for the service. Exiting.");
@@ -68,7 +68,7 @@ bool Reconfigure::reconfigure_srv_call(std::string new_mode)
     RCLCPP_INFO(node_->get_logger(), "System mode correctly changed");
     return true;
 
-  } 
+  }
   else
   {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service change_mode");

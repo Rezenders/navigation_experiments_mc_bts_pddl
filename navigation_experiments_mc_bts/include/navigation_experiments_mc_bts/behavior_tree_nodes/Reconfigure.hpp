@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
-#include "system_modes/srv/change_mode.hpp"
+#include "system_modes_msgs/srv/change_mode.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -38,8 +38,8 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return { 
-      BT::InputPort<std::string>("mode") 
+    return {
+      BT::InputPort<std::string>("mode")
     };
 
   }
@@ -55,8 +55,8 @@ public:
   }
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<system_modes::srv::ChangeMode>::SharedPtr client_;
-  
+  rclcpp::Client<system_modes_msgs::srv::ChangeMode>::SharedPtr client_;
+
   bool reconfigure_srv_call(std::string new_mode);
 };
 

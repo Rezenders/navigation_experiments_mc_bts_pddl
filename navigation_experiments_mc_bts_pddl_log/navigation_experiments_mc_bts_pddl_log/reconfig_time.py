@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
- 
+
 import os
 import os.path
 
@@ -23,7 +23,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy
 from std_msgs.msg import Float64, Empty, Int16
 from diagnostic_msgs.msg import DiagnosticArray
-from system_modes.msg import ModeEvent
+from system_modes_msgs.msg import ModeEvent
 import math
 from datetime import datetime
 
@@ -41,7 +41,7 @@ class ReconfigTime(Node):
             self.mode_cb, 1)
 
         self.pub_ = self.create_publisher(
-            Float64, 
+            Float64,
             '/navigation_experiments_mc_bts_pddl/reconfig_time',
             10)
 
@@ -61,7 +61,7 @@ class ReconfigTime(Node):
                 time_msg = Float64()
                 time_msg.data = self.reconfig_time_.to_msg().sec + (self.reconfig_time_.to_msg().nanosec / 1000000000)
                 self.pub_.publish(time_msg)
-                
+
 
     def diagnostics_cb(self, msg):
         for diagnostic_status in msg.status:
@@ -81,7 +81,7 @@ class ReconfigTime(Node):
                 elif component == "laser_resender":
                     if value == "FALSE":
                         self.component_in_error_time_ = self.get_clock().now()
-          
+
 def main(args=None):
     rclpy.init(args=args)
     node = ReconfigTime()
