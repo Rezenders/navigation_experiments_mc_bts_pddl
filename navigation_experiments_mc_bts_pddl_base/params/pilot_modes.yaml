@@ -40,6 +40,11 @@ f_navigate:
         controller_server: active.SLOW
         pointcloud_to_laser: inactive
         laser_resender: active
+      fd_unground:
+        amcl: active
+        controller_server: active
+        pointcloud_to_laser: inactive
+        laser_resender: active
     # [Rule to switch]
 
 amcl:
