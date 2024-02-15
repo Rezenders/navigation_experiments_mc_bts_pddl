@@ -16,11 +16,8 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, ExecuteProcess, 
-                            IncludeLaunchDescription, SetEnvironmentVariable)
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 from nav2_common.launch import RewrittenYaml
@@ -100,7 +97,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'map_subscribe_transient_local', default_value='false',
             description='Whether to set the map subscriber QoS to transient local'),
-        
+
         DeclareLaunchArgument(
             'cmd_vel_topic', default_value='cmd_vel',
             description='Command velocity topic'),

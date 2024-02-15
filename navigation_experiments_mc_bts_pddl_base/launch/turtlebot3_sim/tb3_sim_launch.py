@@ -153,8 +153,9 @@ def generate_launch_description():
         )
     )
 
-    shm_model_path = (get_package_share_directory('navigation_experiments_mc_bts_pddl_base') +
-        '/params/pilot_modes.yaml')
+    shm_model_path = (
+        get_package_share_directory('navigation_experiments_mc_bts_pddl_base')
+        + '/params/pilot_modes.yaml')
 
     # Start as a normal node is currently not possible.
     # Path to SHM file should be passed as a ROS parameter.
@@ -169,13 +170,14 @@ def generate_launch_description():
         executable='reconfig_time',
         output='screen')
 
-    ## Used to get logs out of the tests
-    ## You need to define the correct log folder
-
-    # topics_2_csv_node = Node(
-    #     package='navigation_experiments_mc_bts_pddl_log',
-    #     executable='topics_2_csv',
-    #     output='screen')
+    # Used to get logs out of the tests
+    # You need to define the correct log folder
+    topics_2_csv_node = Node(
+        package='navigation_experiments_mc_bts_pddl_log',
+        executable='topics_2_csv',
+        output='screen',
+        parameters=[{'result_path': '~/iros2021_results'}],
+    )
 
     ld = LaunchDescription()
 
@@ -199,13 +201,14 @@ def generate_launch_description():
     ld.add_action(modes_observer_node)
     ld.add_action(reconfig_time_node)
 
-    ## Node to log some topics in a csv node
-    # ld.add_action(topics_2_csv_node)
+    # Node to log some topics in a csv node
+    ld.add_action(topics_2_csv_node)
 
     ld.add_action(pcl2laser_cmd)
     ld.add_action(laser_resender_cmd)
     ld.add_action(battery_contingency_cmd)
     ld.add_action(emit_event_to_request_that_pcl2laser_configure_transition)
-    ld.add_action(emit_event_to_request_that_laser_resender_configure_transition)
+    ld.add_action(
+        emit_event_to_request_that_laser_resender_configure_transition)
 
     return ld

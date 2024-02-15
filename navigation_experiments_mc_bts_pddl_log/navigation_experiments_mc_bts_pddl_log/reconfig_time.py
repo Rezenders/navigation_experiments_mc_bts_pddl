@@ -12,20 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import os.path
-
 import rclpy
 from rclpy.node import Node
-from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy
-from std_msgs.msg import Float64, Empty, Int16
+from std_msgs.msg import Float64
 from diagnostic_msgs.msg import DiagnosticArray
 from system_modes_msgs.msg import ModeEvent
-import math
-from datetime import datetime
+
 
 class ReconfigTime(Node):
     def __init__(self, last_contexts=None):
@@ -37,7 +29,7 @@ class ReconfigTime(Node):
 
         self.mode_sub_ = self.create_subscription(
             ModeEvent,
-            "/pilot/mode_request_info",
+            "/f_navigate/mode_request_info",
             self.mode_cb, 1)
 
         self.pub_ = self.create_publisher(
@@ -82,12 +74,14 @@ class ReconfigTime(Node):
                     if value == "FALSE":
                         self.component_in_error_time_ = self.get_clock().now()
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = ReconfigTime()
     rclpy.spin(node)
     node.destroy()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
