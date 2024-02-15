@@ -3,6 +3,7 @@ FROM ros:foxy
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt update && apt install -y --no-install-recommends\
+  vim \
   locales \
   dirmngr \
   gnupg2 \
@@ -72,7 +73,6 @@ RUN apt update && apt install -y --no-install-recommends\
   ros-foxy-slam-toolbox \
   && rm -rf /var/lib/apt/lists/
 
-RUN mkdir -p /mros_reasoner_ws/src
 WORKDIR /mros_reasoner/src
 COPY resources.repos resources.repos
 RUN vcs import < resources.repos
