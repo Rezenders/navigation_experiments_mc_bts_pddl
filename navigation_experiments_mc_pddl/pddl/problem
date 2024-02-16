@@ -1,0 +1,35 @@
+set instance r2d2 robot
+set instance wp1 waypoint
+set instance wp2 waypoint
+set instance wp3 waypoint
+set instance wp4 waypoint
+set instance wp5 waypoint
+set instance wp6 waypoint
+set instance wp6 waypoint
+set instance wp_r waypoint
+
+set predicate (recharge_station wp_r)
+
+set predicate (path wp1 wp2)
+set predicate (path wp2 wp3)
+set predicate (path wp3 wp4)
+set predicate (path wp4 wp5)
+set predicate (path wp5 wp6)
+
+set predicate (path wp1 wp_r)
+set predicate (path wp2 wp_r)
+set predicate (path wp3 wp_r)
+set predicate (path wp4 wp_r)
+set predicate (path wp5 wp_r)
+set predicate (path wp6 wp_r)
+
+set predicate (path wp_r wp1)
+set predicate (path wp_r wp2)
+set predicate (path wp_r wp3)
+set predicate (path wp_r wp4)
+set predicate (path wp_r wp5)
+set predicate (path wp_r wp6)
+
+set predicate (robot_at r2d2 wp_r)
+
+set function (= (battery_level r2d2) 100)
