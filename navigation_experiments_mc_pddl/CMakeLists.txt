@@ -13,6 +13,7 @@ find_package(std_srvs REQUIRED)
 find_package(system_modes REQUIRED)
 find_package(plansys2_executor REQUIRED)
 find_package(plansys2_domain_expert REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -27,6 +28,7 @@ set(dependencies
     mros2_msgs
     std_srvs
     system_modes
+    tf2_geometry_msgs
 )
 
 add_executable(move_action_node src/move_action_node.cpp)
@@ -53,8 +55,8 @@ ament_target_dependencies(recover_nav_sensor_node ${dependencies})
 add_executable(patrolling_controller_node src/patrolling_controller_node.cpp)
 ament_target_dependencies(patrolling_controller_node ${dependencies})
 
-add_executable(patrolling_reconfig_controller_node src/patrolling_reconfig_controller_node.cpp)
-ament_target_dependencies(patrolling_reconfig_controller_node ${dependencies})
+# add_executable(patrolling_reconfig_controller_node src/patrolling_reconfig_controller_node.cpp)
+# ament_target_dependencies(patrolling_reconfig_controller_node ${dependencies})
 
 install(DIRECTORY launch pddl DESTINATION share/${PROJECT_NAME})
 
@@ -67,7 +69,7 @@ install(TARGETS
   reconfigure_action_node
   recover_nav_sensor_node
   patrolling_controller_node
-  patrolling_reconfig_controller_node
+  # patrolling_reconfig_controller_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
