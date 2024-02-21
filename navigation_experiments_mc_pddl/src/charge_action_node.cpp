@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto node = std::make_shared<ChargeAction>();
 
-  node->set_parameter(rclcpp::Parameter("action_name", "charge"));
+  node->set_parameter(rclcpp::Parameter("action_name", "recharge"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
   rclcpp::spin(node->get_node_base_interface());

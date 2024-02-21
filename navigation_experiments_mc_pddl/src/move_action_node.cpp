@@ -40,7 +40,7 @@ class MoveAction : public plansys2::ActionExecutorClient
 public:
   MoveAction()
   : plansys2::ActionExecutorClient("move", 500ms)
-  {    
+  {
     geometry_msgs::msg::PoseStamped wp;
     wp.header.frame_id = "/map";
     wp.pose.position.x = 1.0;
@@ -65,10 +65,25 @@ public:
     wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
     waypoints_["wp4"] = wp;
 
+    wp.pose.position.x = -6.40;
+    wp.pose.position.y = -2.81;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
+    waypoints_["wp5"] = wp;
+
+    wp.pose.position.x = -6.25;
+    wp.pose.position.y = 2.66;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
+    waypoints_["wp6"] = wp;
+
+    wp.pose.position.x = -1.5;
+    wp.pose.position.y = 1.5;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
+    waypoints_["wp7"] = wp;
+
     wp.pose.position.x = 4.0;
     wp.pose.position.y = -3.0;
     wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
-    waypoints_["wp_control"] = wp;
+    waypoints_["wp_r"] = wp;
 
     using namespace std::placeholders;
     pos_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
@@ -76,7 +91,7 @@ public:
       10,
       std::bind(&MoveAction::current_pos_callback, this, _1));
     private_node_ = rclcpp::Node::make_shared("pr_move_node");
-    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>(private_node_);
+    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
     sys_issue_detected_ = false;
   }
 
@@ -107,7 +122,6 @@ public:
     RCLCPP_INFO(get_logger(), "Navigation action server ready");
 
     wp_to_navigate_ = get_arguments()[2];  // The goal is in the 3rd argument of the action
-    current_mode_ = get_arguments()[3];  // The mode is in the 4rd argument of the action
 
     RCLCPP_INFO(get_logger(), "Start navigation to [%s]", wp_to_navigate_.c_str());
 
@@ -128,45 +142,31 @@ public:
     auto send_goal_options =
       rclcpp_action::Client<NavigateToPoseQos>::SendGoalOptions();
 
-    if (current_mode_ == "f_normal_mode")
-    {
-      send_goal_options.feedback_callback = [this](
-      NavigationGoalHandle::SharedPtr,
-      NavigationFeedback feedback) {
-        if (feedback->qos_status.selected_mode == "f_energy_saving_mode" &&
-        now() - goal_sended_stamp_ > rclcpp::Duration::from_seconds(2.0)) 
-        {
-          problem_expert_->removePredicate(plansys2::Predicate("(battery_enough r2d2)"));
-          problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
-          problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_aux)"));
-          sys_issue_detected_ = true;
-          return;
-        } 
-        else if (feedback->qos_status.selected_mode == "f_degraded_mode")
-        {
-          problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_aux)"));
-          problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
-          sys_issue_detected_ = true;
-        }
-        send_feedback(
-          std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
-          "Move running");
-      };
-    } 
-    else
-    {
-      send_goal_options.feedback_callback = [this](
-      NavigationGoalHandle::SharedPtr,
-      NavigationFeedback feedback) {
-        send_feedback(
-          std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
-          "Move running");
-      };
-    }
+    send_goal_options.feedback_callback = [this](
+    NavigationGoalHandle::SharedPtr,
+    NavigationFeedback feedback) {
+      if (feedback->qos_status.selected_mode == "f_energy_saving_mode" &&
+      now() - goal_sended_stamp_ > rclcpp::Duration::from_seconds(2.0))
+      {
+        problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
+        problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
+        problem_expert_->removePredicate(plansys2::Predicate("(battery_charged r2d2)"));
+        sys_issue_detected_ = true;
+        return;
+      }
+      else if (feedback->qos_status.selected_mode == "f_degraded_mode")
+      {
+        problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
+        sys_issue_detected_ = true;
+      }
+      send_feedback(
+        std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
+        "Move running");
+    };
 
     send_goal_options.result_callback = [this](auto) {
-        finish(true, 1.0, "Move completed");
-      };
+      finish(true, 1.0, "Move completed");
+    };
 
     future_navigation_goal_handle_ =
       navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);

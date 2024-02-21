@@ -15,8 +15,11 @@
 #include <memory>
 
 #include "plansys2_msgs/msg/action_execution_info.hpp"
+#include "plansys2_msgs/msg/plan.hpp"
 
+#include "plansys2_domain_expert/DomainExpertClient.hpp"
 #include "plansys2_executor/ExecutorClient.hpp"
+#include "plansys2_planner/PlannerClient.hpp"
 #include "plansys2_problem_expert/ProblemExpertClient.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -25,188 +28,85 @@
 class PatrollingController : public rclcpp::Node
 {
 public:
+  bool mission_completed = false;
   PatrollingController()
-  : rclcpp::Node("patrolling_controller"), state_(STARTING)
+  : rclcpp::Node("patrolling_controller")
   {
   }
 
   void init()
   {
-    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>(shared_from_this());
-    executor_client_ = std::make_shared<plansys2::ExecutorClient>(shared_from_this());
-    init_knowledge();
+    domain_expert_ = std::make_shared<plansys2::DomainExpertClient>();
+    planner_client_ = std::make_shared<plansys2::PlannerClient>();
+    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
+    executor_client_ = std::make_shared<plansys2::ExecutorClient>();
   }
 
-  void init_knowledge()
-  {
-    problem_expert_->addInstance(plansys2::Instance{"r2d2", "robot"});
-    problem_expert_->addInstance(plansys2::Instance{"wp_control", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"wp1", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"wp2", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"wp3", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"wp4", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"wp_aux", "waypoint"});
-    problem_expert_->addInstance(plansys2::Instance{"f_normal_mode", "mode"});
-
-    problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_control)"));
-    problem_expert_->addPredicate(plansys2::Predicate("(battery_enough r2d2)"));
-    problem_expert_->addPredicate(plansys2::Predicate("(normal_mode f_normal_mode)"));
-    problem_expert_->addPredicate(plansys2::Predicate("(charging_point_at wp_control)"));
-    problem_expert_->addPredicate(plansys2::Predicate("(current_system_mode f_normal_mode)"));
-
-  }
-
-  void step()
-  {
-    switch (state_) {
-      case STARTING:
-        // Set the goal for next state, and execute plan
-        problem_expert_->setGoal(plansys2::Goal("(and(robot_at r2d2 wp1))"));
-
-        if (executor_client_->executePlan()) {
-          state_ = PATROL_WP1;
-        }
-        break;
-      case PATROL_WP1:
-        {
-          auto feedback = executor_client_->getFeedBack();
-          
-          for (const auto & action_feedback : feedback.action_execution_status) {
-            std::cout << "[" << action_feedback.action << " " <<
-              action_feedback.completion * 100.0 << "%]";
-          }
-          std::cout << std::endl;
-
-          if (executor_client_->getResult()) {
-            if (executor_client_->getResult().value().success) {
-              std::cout << "Successful finished " << std::endl;
-
-              // Set the goal for next state, and execute plan
-              problem_expert_->setGoal(plansys2::Goal("(and(robot_at r2d2 wp2))"));
-
-              if (executor_client_->executePlan()) {
-                state_ = PATROL_WP2;
-              }
-            } else {
-              for (const auto & action_feedback : feedback.action_execution_status) {
-                if (action_feedback.status == plansys2_msgs::msg::ActionExecutionInfo::FAILED) {
-                  std::cout << "[" << action_feedback.action << "] finished with error: " <<
-                    action_feedback.message_status << std::endl;
-                }
-              }
-              executor_client_->executePlan();  // replan and execute
-            }
-          }
-        }
-        break;
-      case PATROL_WP2:
-        {
-          auto feedback = executor_client_->getFeedBack();
-
-          for (const auto & action_feedback : feedback.action_execution_status) {
-            std::cout << "[" << action_feedback.action << " " <<
-              action_feedback.completion * 100.0 << "%]";
-          }
-          std::cout << std::endl;
-
-          if (executor_client_->getResult()) {
-            if (executor_client_->getResult().value().success) {
-              std::cout << "Successful finished " << std::endl;
-
-              // Set the goal for next state, and execute plan
-              problem_expert_->setGoal(plansys2::Goal("(and(robot_at r2d2 wp3))"));
-
-              if (executor_client_->executePlan()) {
-                state_ = PATROL_WP3;
-              }
-            } else {
-              for (const auto & action_feedback : feedback.action_execution_status) {
-                if (action_feedback.status == plansys2_msgs::msg::ActionExecutionInfo::FAILED) {
-                  std::cout << "[" << action_feedback.action << "] finished with error: " <<
-                    action_feedback.message_status << std::endl;
-                }
-              }
-              executor_client_->executePlan();  // replan and execute
-            }
-          }
-        }
-        break;
-      case PATROL_WP3:
-        {
-          auto feedback = executor_client_->getFeedBack();
-
-          for (const auto & action_feedback : feedback.action_execution_status) {
-            std::cout << "[" << action_feedback.action << " " <<
-              action_feedback.completion * 100.0 << "%]";
-          }
-          std::cout << std::endl;
-
-          if (executor_client_->getResult()) {
-            if (executor_client_->getResult().value().success) {
-              std::cout << "Successful finished " << std::endl;
-
-              // Set the goal for next state, and execute plan
-              problem_expert_->setGoal(plansys2::Goal("(and(robot_at r2d2 wp4))"));
-
-              if (executor_client_->executePlan()) {
-                state_ = PATROL_WP4;
-              }
-            } else {
-              for (const auto & action_feedback : feedback.action_execution_status) {
-                if (action_feedback.status == plansys2_msgs::msg::ActionExecutionInfo::FAILED) {
-                  std::cout << "[" << action_feedback.action << "] finished with error: " <<
-                    action_feedback.message_status << std::endl;
-                }
-              }
-              executor_client_->executePlan();  // replan and execute
-            }
-          }
-        }
-        break;
-      case PATROL_WP4:
-        {
-          auto feedback = executor_client_->getFeedBack();
-
-          for (const auto & action_feedback : feedback.action_execution_status) {
-            std::cout << "[" << action_feedback.action << " " <<
-              action_feedback.completion * 100.0 << "%]";
-          }
-          std::cout << std::endl;
-
-          if (executor_client_->getResult()) {
-            if (executor_client_->getResult().value().success) {
-              std::cout << "Successful finished " << std::endl;
-
-              // Set the goal for next state, and execute plan
-              problem_expert_->setGoal(plansys2::Goal("(and(robot_at r2d2 wp1))"));
-
-              if (executor_client_->executePlan()) {
-                // Loop to WP1
-                state_ = PATROL_WP1;
-              }
-            } else {
-              for (const auto & action_feedback : feedback.action_execution_status) {
-                if (action_feedback.status == plansys2_msgs::msg::ActionExecutionInfo::FAILED) {
-                  std::cout << "[" << action_feedback.action << "] finished with error: " <<
-                    action_feedback.message_status << std::endl;
-                }
-              }
-              executor_client_->executePlan();  // replan and execute
-            }
-          }
-        }
-        break;
-      default:
-        break;
+  void step(){
+    if (!executor_client_->execute_and_check_plan() && executor_client_->getResult()) {
+      if (executor_client_->getResult().value().success) {
+        std::cout << "Successful finished " << std::endl;
+        mission_completed = true;
+      } else {
+          std::cout << "Replanning!" << std::endl;
+          execute_plan();
+          return;
+      }
     }
+
+    auto feedback = executor_client_->getFeedBack();
+    for (const auto & action_feedback : feedback.action_execution_status) {
+      if (action_feedback.status == plansys2_msgs::msg::ActionExecutionInfo::FAILED) {
+        std::cout << "[" << action_feedback.action << "] finished with error: " <<
+          action_feedback.message_status <<std::endl;
+          break;
+      }
+
+      std::string arguments_str = " ";
+      for (const auto & arguments: action_feedback.arguments){
+        arguments_str += arguments + " ";
+      }
+      std::cout << "[" << action_feedback.action << arguments_str <<
+        action_feedback.completion * 100.0 << "%]";
+    }
+    std::cout << std::endl;
   }
+
+void execute_plan(){
+  // Compute the plan
+  auto domain = domain_expert_->getDomain();
+  auto problem = problem_expert_->getProblem();
+  auto plan = planner_client_->getPlan(domain, problem);
+
+  if (!plan.has_value()) {
+    for (auto instance: problem_expert_->getInstances()){
+      std::cout<<"Instance "<< instance.name.c_str() << " type " <<
+        instance.type.c_str() << std::endl;
+    }
+    for (auto predicate: problem_expert_->getPredicates()) {
+      std::cout << "Predicates: " << std::endl;
+      std::cout << parser::pddl::toString(predicate)<<std::endl;
+    }
+
+    std::cout << "Could not find plan to reach goal " <<
+     parser::pddl::toString(problem_expert_->getGoal()) << std::endl;
+    return;
+  }
+
+  std::cout << "Selected plan: " << std::endl;
+  for (auto item : plan->items){
+    RCLCPP_INFO(this->get_logger(), "  Action: '%s'", item.action.c_str());
+  }
+  // Execute the plan
+  executor_client_->start_plan_execution(plan.value());
+}
 
 private:
-  typedef enum {STARTING, PATROL_WP1, PATROL_WP2, PATROL_WP3, PATROL_WP4} StateType;
-  StateType state_;
-
+  std::shared_ptr<plansys2::DomainExpertClient> domain_expert_;
+  std::shared_ptr<plansys2::PlannerClient> planner_client_;
   std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
   std::shared_ptr<plansys2::ExecutorClient> executor_client_;
+
 };
 
 int main(int argc, char ** argv)
@@ -217,7 +117,8 @@ int main(int argc, char ** argv)
   node->init();
 
   rclcpp::Rate rate(5);
-  while (rclcpp::ok()) {
+  node->execute_plan();
+  while (rclcpp::ok() && !node->mission_completed) {
     node->step();
 
     rate.sleep();

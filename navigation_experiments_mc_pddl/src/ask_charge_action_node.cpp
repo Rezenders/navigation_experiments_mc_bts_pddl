@@ -41,7 +41,7 @@ public:
     wp.pose.position.x = 4.0;
     wp.pose.position.y = -3.0;
     wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
-    waypoints_["wp_control"] = wp;
+    waypoints_["wp_r"] = wp;
 
     pos_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "/amcl_pose",
@@ -118,7 +118,7 @@ private:
       (pos1.position.x - pos2.position.x) * (pos1.position.x - pos2.position.x) +
       (pos1.position.y - pos2.position.y) * (pos1.position.y - pos2.position.y));
   }
-  
+
   void do_work()
   {
   }
@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto node = std::make_shared<AskCharge>();
 
-  node->set_parameter(rclcpp::Parameter("action_name", "askcharge"));
+  node->set_parameter(rclcpp::Parameter("action_name", "move_recharge_station"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
   rclcpp::spin(node->get_node_base_interface());

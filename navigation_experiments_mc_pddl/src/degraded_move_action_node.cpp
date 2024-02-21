@@ -40,7 +40,7 @@ class DegradedMoveAction : public plansys2::ActionExecutorClient
 public:
   DegradedMoveAction()
   : plansys2::ActionExecutorClient("degraded_move", 500ms)
-  {    
+  {
     geometry_msgs::msg::PoseStamped wp;
     wp.header.frame_id = "/map";
     wp.pose.position.x = 1.0;
@@ -76,7 +76,7 @@ public:
       10,
       std::bind(&DegradedMoveAction::current_pos_callback, this, _1));
     private_node_ = rclcpp::Node::make_shared("pr_move_node");
-    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>(private_node_);
+    problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
     sys_issue_detected_ = false;
   }
 
