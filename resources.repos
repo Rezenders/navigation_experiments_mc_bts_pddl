@@ -2,15 +2,15 @@ repositories:
   turtlebot3/turtlebot3:
     type: git
     url: https://github.com/ROBOTIS-GIT/turtlebot3.git
-    version: f3cdd789e2dd1f17ec36bdf3cff6a016aeff603e
+    version: foxy-devel
   turtlebot3/turtlebot3_msgs:
     type: git
     url: https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
-    version: 606f339adcb7f4a9d03c6dd0b5c9e5402ea04e97
+    version: foxy-devel
   turtlebot3/turtlebot3_simulations:
     type: git
     url: https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
-    version: 259a2ad9ecfeeacb6aca9303a18b76c34a0a91ac
+    version: foxy-devel
   utils/DynamixelSDK:
     type: git
     url: https://github.com/ROBOTIS-GIT/DynamixelSDK.git
@@ -24,33 +24,29 @@ repositories:
     url: https://github.com/MROS-RobMoSys-ITP/pointcloud_to_laserscan
     version: a6db08ba7c4e75695e5fb8b61c2144554beffc6f
   utils/ros2_knowledge_graph:
-      type: git
-      url: https://github.com/fmrico/ros2_knowledge_graph.git
-      version: a7da4db692ac947797ae1016ce22af919a917ccd
+     type: git
+     url: https://github.com/fmrico/ros2_knowledge_graph.git
+     version: a7da4db692ac947797ae1016ce22af919a917ccd
   ontologies/mros_ontology:
       type: git
       url: https://github.com/meta-control/mros_ontology.git
-      version: main
+      version: 51a1ae94c8d8337b51ab56eaa9c44ee5f9c66a0c
   ontologies/mc_mdl_tomasys:
       type: git
       url: https://github.com/meta-control/mc_mdl_tomasys.git
-      version: ros2
+      version: b4822dedead8d6659cb1433daf1a618f0e222cbb
   Pilot-URJC:
     type: git
-    url: https://github.com/MROS-RobMoSys-ITP/Pilot-URJC.git
-    version: e2126bafbd9b93b7dc91b40909ef600c94139f0e
+    url: https://github.com/Rezenders/Pilot-URJC.git
+    version: metacontrol-test-integration
   mc_mros_reasoner:
     type: git
     url: https://github.com/meta-control/mc_mros_reasoner.git
-    version: master
+    version: 4b9caa2f802c5788601fb8146f24a7adc047e93c
   mros_modes_observer:
     type: git
     url: https://github.com/Rezenders/mros_modes_observer.git
     version: e69be3fa1a2fc010d875ca2bde762a0dc3a867a1
-  ros2_planning_system:
-    type: git
-    url:  https://github.com/IntelligentRoboticsLabs/ros2_planning_system.git
-    version: 005653a9c6e1ae0d357a5abaca8ba0a66d7db394
   utils/system_modes:
     type: git
     url:  https://github.com/micro-ROS/system_modes.git
