@@ -69,8 +69,12 @@ RUN apt update && apt install -y --no-install-recommends\
   ros-foxy-rviz2 \
   ros-foxy-rclcpp-cascade-lifecycle \
   ros-foxy-cascade-lifecycle-msgs \
-  ros-foxy-popf \
   ros-foxy-slam-toolbox \
+  ros-foxy-rqt-gui-cpp \
+  ros-foxy-tf2 \
+  ros-foxy-tf2-msgs \
+  ros-foxy-popf \
+  ros-foxy-plansys2-* \
   && rm -rf /var/lib/apt/lists/
 
 WORKDIR /mros_reasoner/src
