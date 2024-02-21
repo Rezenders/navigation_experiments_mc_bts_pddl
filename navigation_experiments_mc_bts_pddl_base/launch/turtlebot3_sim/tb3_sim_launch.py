@@ -101,6 +101,7 @@ def generate_launch_description():
         package='pointcloud_to_laserscan',
         executable='pointcloud_to_laserscan_managed',
         name='pointcloud_to_laser',
+        namespace='',
         remappings=[('cloud_in', '/intel_realsense_r200_depth/points'),
                     ('scan', '/mros_scan')],
         parameters=[{
@@ -129,6 +130,7 @@ def generate_launch_description():
         name='laser_resender',
         package='laser_resender',
         executable='laser_resender_node',
+        namespace='',
         output='screen')
 
     battery_contingency_cmd = Node(

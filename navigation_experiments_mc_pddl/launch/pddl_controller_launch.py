@@ -20,13 +20,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-import launch  # noqa: E402
-import launch.actions  # noqa: E402
-import launch.events  # noqa: E402
 
-import launch_ros.actions  # noqa: E402
-import launch_ros.events  # noqa: E402
-import launch_ros.events.lifecycle  # noqa: E402
 
 def generate_launch_description():
     # Get the launch directory
@@ -36,11 +30,14 @@ def generate_launch_description():
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     plansys2_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('plansys2_bringup'),
-            'launch',
-            'plansys2_bringup_launch_distributed.py')),
-        launch_arguments={'model_file': example_dir + '/pddl/patrol_w_recharge.pddl'}.items()
+            PythonLaunchDescriptionSource(os.path.join(
+                get_package_share_directory('navigation_experiments_mc_pddl'),
+                'launch',
+                'plansys2_bringup_launch_distributed.py')),
+            launch_arguments={
+                'model_file': example_dir + '/pddl/patrol_domain.pddl',
+                'problem_file': example_dir + '/pddl/patrol_problem.pddl',
+            }.items()
         )
 
     # Specify the actions
