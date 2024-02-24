@@ -14,6 +14,7 @@ find_package(system_modes REQUIRED)
 find_package(plansys2_executor REQUIRED)
 find_package(plansys2_domain_expert REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -29,6 +30,7 @@ set(dependencies
     std_srvs
     system_modes
     tf2_geometry_msgs
+    diagnostic_msgs
 )
 
 add_executable(move_action_node src/move_action_node.cpp)
@@ -37,11 +39,11 @@ ament_target_dependencies(move_action_node ${dependencies})
 add_executable(patrol_action_node src/patrol_action_node.cpp)
 ament_target_dependencies(patrol_action_node ${dependencies})
 
-add_executable(charge_action_node src/charge_action_node.cpp)
-ament_target_dependencies(charge_action_node ${dependencies})
+add_executable(recharge_action_node src/recharge_action_node.cpp)
+ament_target_dependencies(recharge_action_node ${dependencies})
 
-add_executable(ask_charge_action_node src/ask_charge_action_node.cpp)
-ament_target_dependencies(ask_charge_action_node ${dependencies})
+add_executable(move_recharge_station_action_node src/move_recharge_station_action_node.cpp)
+ament_target_dependencies(move_recharge_station_action_node ${dependencies})
 
 add_executable(degraded_move_action_node src/degraded_move_action_node.cpp)
 ament_target_dependencies(degraded_move_action_node ${dependencies})
@@ -55,16 +57,16 @@ ament_target_dependencies(recover_nav_sensor_node ${dependencies})
 add_executable(patrolling_controller_node src/patrolling_controller_node.cpp)
 ament_target_dependencies(patrolling_controller_node ${dependencies})
 
-add_executable(patrolling_reconfig_controller_node src/patrolling_reconfig_controller_node.cpp)
-ament_target_dependencies(patrolling_reconfig_controller_node ${dependencies})
+# add_executable(patrolling_reconfig_controller_node src/patrolling_reconfig_controller_node.cpp)
+# ament_target_dependencies(patrolling_reconfig_controller_node ${dependencies})
 
 install(DIRECTORY launch pddl DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   move_action_node
   patrol_action_node
-  charge_action_node
-  ask_charge_action_node
+  recharge_action_node
+  move_recharge_station_action_node
   degraded_move_action_node
   reconfigure_action_node
   recover_nav_sensor_node

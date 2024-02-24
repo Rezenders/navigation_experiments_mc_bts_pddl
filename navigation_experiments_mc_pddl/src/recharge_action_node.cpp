@@ -23,15 +23,14 @@
 
 using namespace std::chrono_literals;
 
-class ChargeAction : public plansys2::ActionExecutorClient
+class RechargeAction : public plansys2::ActionExecutorClient
 {
 public:
-  ChargeAction()
+  RechargeAction()
   : plansys2::ActionExecutorClient("charge", 500ms)
   {
     progress_ = 0.0;
     client_ = create_client<std_srvs::srv::Empty>("battery_contingency/battery_charged");
-
   }
 
 private:
@@ -73,7 +72,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<ChargeAction>();
+  auto node = std::make_shared<RechargeAction>();
 
   node->set_parameter(rclcpp::Parameter("action_name", "recharge"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);

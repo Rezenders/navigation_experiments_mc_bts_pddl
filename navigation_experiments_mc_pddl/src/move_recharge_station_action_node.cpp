@@ -30,11 +30,11 @@ using namespace std::chrono_literals;
 using namespace std::placeholders;
 using NavigateToPoseQos = mros2_msgs::action::NavigateToPoseQos;
 
-class AskCharge : public plansys2::ActionExecutorClient
+class MoveRechargeStation : public plansys2::ActionExecutorClient
 {
 public:
-  AskCharge()
-  : plansys2::ActionExecutorClient("askcharge", 1s)
+  MoveRechargeStation()
+  : plansys2::ActionExecutorClient("MoveRechargeStation", 1s)
   {
     geometry_msgs::msg::PoseStamped wp;
     wp.header.frame_id = "/map";
@@ -46,7 +46,9 @@ public:
     pos_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "/amcl_pose",
       10,
-      std::bind(&AskCharge::current_pos_callback, this, _1));
+      std::bind(&MoveRechargeStation::current_pos_callback, this, _1));
+
+    this->declare_parameter("metacontrol", true);
   }
 
   void current_pos_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -147,7 +149,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<AskCharge>();
+  auto node = std::make_shared<MoveRechargeStation>();
 
   node->set_parameter(rclcpp::Parameter("action_name", "move_recharge_station"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
