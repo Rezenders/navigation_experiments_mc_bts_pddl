@@ -55,21 +55,21 @@ def generate_launch_description():
         output='screen',
         parameters=[])
 
-    charge_cmd = Node(
+    recharge_cmd = Node(
         package='navigation_experiments_mc_pddl',
-        executable='charge_action_node',
-        name='charge_action_node',
+        executable='recharge_action_node',
+        name='recharge_action_node',
         output='screen',
         parameters=[])
 
-    ask_charge_cmd = Node(
+    move_recharge_station_cmd = Node(
         package='navigation_experiments_mc_pddl',
-        executable='ask_charge_action_node',
-        name='ask_charge_action_node',
+        executable='move_recharge_station_action_node',
+        name='move_recharge_station_action_node',
         output='screen',
         parameters=[])
 
-    #pddl_controller_cmd = Node(
+    # pddl_controller_cmd = Node(
     #    package='navigation_experiments_mc_pddl',
     #    executable='patrolling_controller_node',
     #    name='patrolling_controller_node',
@@ -87,7 +87,7 @@ def generate_launch_description():
 
     ld.add_action(move_cmd)
     ld.add_action(patrol_cmd)
-    ld.add_action(charge_cmd)
-    ld.add_action(ask_charge_cmd)
-    #ld.add_action(pddl_controller_cmd)
+    ld.add_action(recharge_cmd)
+    ld.add_action(move_recharge_station_cmd)
+    # ld.add_action(pddl_controller_cmd)
     return ld
