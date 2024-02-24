@@ -43,7 +43,6 @@
     (patrolled r2d2 wp5)
     (patrolled r2d2 wp6)
     (patrolled r2d2 wp7)
-    (robot_at r2d2 wp_r)
   )
 )
 )

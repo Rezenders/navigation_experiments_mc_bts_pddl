@@ -5,7 +5,6 @@ set instance wp3 waypoint
 set instance wp4 waypoint
 set instance wp5 waypoint
 set instance wp6 waypoint
-set instance wp6 waypoint
 set instance wp_r waypoint
 
 set predicate (recharge_station wp_r)
