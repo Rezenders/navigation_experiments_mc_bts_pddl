@@ -17,6 +17,8 @@ from rclpy.node import Node
 from std_msgs.msg import Float64
 from diagnostic_msgs.msg import DiagnosticArray
 from system_modes_msgs.msg import ModeEvent
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 
 class ReconfigTime(Node):
@@ -25,17 +27,25 @@ class ReconfigTime(Node):
         self.diagnostics_sub_ = self.create_subscription(
             DiagnosticArray,
             "/diagnostics",
-            self.diagnostics_cb, 1)
+            self.diagnostics_cb,
+            1,
+            callback_group=MutuallyExclusiveCallbackGroup()
+        )
 
         self.mode_sub_ = self.create_subscription(
             ModeEvent,
             "/f_navigate/mode_request_info",
-            self.mode_cb, 1)
+            self.mode_cb,
+            1,
+            callback_group=MutuallyExclusiveCallbackGroup()
+        )
 
         self.pub_ = self.create_publisher(
             Float64,
             '/navigation_experiments_mc_bts_pddl/reconfig_time',
-            10)
+            10,
+            callback_group=MutuallyExclusiveCallbackGroup(),
+        )
 
         self.reconfig_time_ = 0.0
         self.component_in_error_time_ = 0.0
@@ -82,10 +92,20 @@ class ReconfigTime(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ReconfigTime()
-    rclpy.spin(node)
-    node.destroy()
-    rclpy.shutdown()
+    try:
+        executor = MultiThreadedExecutor()
+        node = ReconfigTime()
+        executor.add_node(node)
+        try:
+            executor.spin()
+        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+            executor.shutdown()
+            node.destroy_node()
+        finally:
+            executor.shutdown()
+            node.destroy_node()
+    finally:
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
