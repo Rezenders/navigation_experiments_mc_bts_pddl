@@ -29,6 +29,7 @@ def generate_launch_description():
         parameters=[{
             'tomasys_file': tomasys_files_array,
             'model_file': model_file,
+            'reasoning_period': 0.5,
         }],
     )
 
