@@ -19,6 +19,7 @@
 #include <map>
 #include <algorithm>
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -90,9 +91,14 @@ public:
       "/amcl_pose",
       10,
       std::bind(&MoveAction::current_pos_callback, this, _1));
-    private_node_ = rclcpp::Node::make_shared("pr_move_node");
+
+    diagnostics_sub_ = create_subscription<diagnostic_msgs::msg::DiagnosticArray>(
+      "/diagnostics",
+      10,
+      std::bind(&MoveAction::diagnostics_cb, this, _1));
+
+    this->declare_parameter("metacontrol", true);
     problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
-    sys_issue_detected_ = false;
   }
 
   void current_pos_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -100,10 +106,29 @@ public:
     current_pos_ = msg->pose.pose;
   }
 
+  void diagnostics_cb(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg)
+  {
+    for(auto diagnostic_status : msg->status){
+      if (diagnostic_status.message == "Component status"){
+        auto component = diagnostic_status.values[0].key;
+        auto value = diagnostic_status.values[0].value;
+        if (component == "battery" && value == "FALSE"){
+          problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
+          problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
+          problem_expert_->removePredicate(plansys2::Predicate("(battery_charged r2d2)"));
+          navigation_action_client_->async_cancel_all_goals();
+        } else if(component == "laser_resender" && value == "FALSE"){
+          problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
+          navigation_action_client_->async_cancel_all_goals();
+        }
+      }
+
+    }
+  }
+
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & previous_state)
   {
-    sys_issue_detected_ = false;
     goal_sended_stamp_ = now();
     send_feedback(0.0, "Move starting");
     navigation_action_client_ =
@@ -145,20 +170,6 @@ public:
     send_goal_options.feedback_callback = [this](
     NavigationGoalHandle::SharedPtr,
     NavigationFeedback feedback) {
-      if (feedback->qos_status.selected_mode == "f_energy_saving_mode" &&
-      now() - goal_sended_stamp_ > rclcpp::Duration::from_seconds(2.0))
-      {
-        problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
-        problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
-        problem_expert_->removePredicate(plansys2::Predicate("(battery_charged r2d2)"));
-        sys_issue_detected_ = true;
-        return;
-      }
-      else if (feedback->qos_status.selected_mode == "f_degraded_mode")
-      {
-        problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
-        sys_issue_detected_ = true;
-      }
       send_feedback(
         std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
         "Move running");
@@ -181,15 +192,7 @@ private:
       (pos1.position.y - pos2.position.y) * (pos1.position.y - pos2.position.y));
   }
 
-  void do_work()
-  {
-    if (sys_issue_detected_)
-    {
-      RCLCPP_WARN(get_logger(), "System issue detected, cancelling move action ...");
-      finish(false, 0.0, "System issue detected");
-      navigation_action_client_->async_cancel_all_goals();
-    }
-  }
+  void do_work() { }
 
   std::map<std::string, geometry_msgs::msg::PoseStamped> waypoints_;
 
@@ -202,16 +205,15 @@ private:
   std::shared_future<NavigationGoalHandle::SharedPtr> future_navigation_goal_handle_;
   NavigationGoalHandle::SharedPtr navigation_goal_handle_;
 
+  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pos_sub_;
   geometry_msgs::msg::Pose current_pos_;
   geometry_msgs::msg::PoseStamped goal_pos_;
   NavigateToPoseQos::Goal navigation_goal_;
 
   std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
-  std::shared_ptr<rclcpp::Node> private_node_;
   double dist_to_move;
-  std::string wp_to_navigate_, current_mode_;
-  bool sys_issue_detected_;
+  std::string wp_to_navigate_;
   rclcpp::Time goal_sended_stamp_;
 };
 
