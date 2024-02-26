@@ -13,7 +13,6 @@
         (patrolled ?r - robot ?wp - waypoint)
         (battery_charged ?r - robot)
         (battery_low ?r - robot)
-        (nav_sensor ?r - robot)
     )
 
     (:functions

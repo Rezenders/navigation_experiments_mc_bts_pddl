@@ -21,8 +21,10 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "system_modes_msgs/srv/change_mode.hpp"
+#include "system_modes_msgs/msg/mode_event.hpp"
 
 using namespace std::chrono_literals;
+using namespace std::placeholders;
 
 class ReconfigureAction : public plansys2::ActionExecutorClient
 {
@@ -31,16 +33,45 @@ public:
   : plansys2::ActionExecutorClient("reconfig_system", 500ms)
   {
     mode_ = "";
-    client_ = create_client<system_modes_msgs::srv::ChangeMode>("/pilot/change_mode");
+    client_cb_group_ =  this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    client_ = create_client<system_modes_msgs::srv::ChangeMode>(
+      "/f_navigate/change_mode", rmw_qos_profile_services_default, client_cb_group_);
+
+    mode_sub_ = create_subscription<system_modes_msgs::msg::ModeEvent>(
+      "/f_navigate/mode_request_info",
+      10,
+      std::bind(&ReconfigureAction::mode_cb, this, _1));
+    current_mode_ = "deactivated";
+  }
+
+  void mode_cb(const system_modes_msgs::msg::ModeEvent::SharedPtr msg)
+  {
+    current_mode_ = msg->goal_mode.label;
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & previous_state)
+  {
+    return ActionExecutorClient::on_activate(previous_state);
   }
 
 private:
   void do_work()
   {
     mode_ = get_arguments()[2];
-    RCLCPP_INFO(get_logger(), "Reconfiguring system mode to %s", mode_.c_str());
-    if (srvCall())
-      finish(true, 1.0, "System reconfigured");
+    if (current_mode_ == mode_){
+      RCLCPP_INFO(get_logger(), "Reconfiguration finished! Current mode %s", current_mode_.c_str());
+      finish(true, 1.0, "System reconfigured!");
+      return;
+    }else{
+      RCLCPP_INFO(get_logger(), "Reconfiguring system mode to %s", mode_.c_str());
+      bool reconfiguration_result = srvCall();
+      if (reconfiguration_result == false){
+        finish(false, 1.0, "Reconfiguration failed");
+        RCLCPP_INFO(get_logger(), "Reconfiguration failed! Current mode %s ", current_mode_.c_str());
+      }
+    }
+
   }
 
   bool srvCall()
@@ -57,11 +88,19 @@ private:
       }
       RCLCPP_INFO(get_logger(), "service not available, waiting again...");
     }
-    auto result = client_->async_send_request(request);
-    return true;
+    auto result_future = client_->async_send_request(request);
+    std::future_status status = result_future.wait_for(10s);  // timeout to guarantee a graceful finish
+    if (status == std::future_status::ready) {
+      return true;
+    }
+    return false;
   }
 
+  rclcpp::Subscription<system_modes_msgs::msg::ModeEvent>::SharedPtr mode_sub_;
+  std::string current_mode_;
+
   rclcpp::Client<system_modes_msgs::srv::ChangeMode>::SharedPtr client_;
+  rclcpp::CallbackGroup::SharedPtr client_cb_group_;
   std::string mode_;
 };
 
@@ -73,7 +112,9 @@ int main(int argc, char ** argv)
   node->set_parameter(rclcpp::Parameter("action_name", "reconfig_system"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
-  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+  executor.spin();
 
   rclcpp::shutdown();
 

@@ -17,7 +17,8 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -31,7 +32,8 @@ def generate_launch_description():
     problem_file = LaunchConfiguration('problem_file')
     namespace = LaunchConfiguration('namespace')
     params_file = LaunchConfiguration('params_file')
-    default_action_bt_xml_filename = LaunchConfiguration('default_action_bt_xml_filename')
+    default_action_bt_xml_filename = LaunchConfiguration(
+        'default_action_bt_xml_filename')
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -51,8 +53,9 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'plansys2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes')
+        default_value=os.path.join(
+            bringup_dir, 'params', 'plansys2_params.yaml'),
+        description='Path to parameters file to use for all launched nodes')
 
     declare_default_bt_file_cmd = DeclareLaunchArgument(
         'default_action_bt_xml_filename',
@@ -108,7 +111,7 @@ def generate_launch_description():
     lifecycle_manager_cmd = Node(
         package='plansys2_lifecycle_manager',
         executable='lifecycle_manager_node',
-        node_name='lifecycle_manager_node',
+        name='lifecycle_manager_node',
         namespace=namespace,
         output='screen',
         parameters=[])

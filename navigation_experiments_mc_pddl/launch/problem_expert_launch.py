@@ -47,8 +47,8 @@ def generate_launch_description():
     # Specify the actions
     domain_expert_cmd = Node(
         package='plansys2_problem_expert',
-        node_executable='problem_expert_node',
-        node_name='problem_expert',
+        executable='problem_expert_node',
+        name='problem_expert',
         namespace=namespace,
         output='screen',
         parameters=[

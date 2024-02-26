@@ -17,11 +17,11 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, ExecuteProcess, GroupAction,
+from launch.actions import (DeclareLaunchArgument, GroupAction,
                             IncludeLaunchDescription, SetEnvironmentVariable)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace
 
 
@@ -30,7 +30,8 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
 
-    pilot_dir = get_package_share_directory('navigation_experiments_mc_bts_pddl_base')
+    pilot_dir = get_package_share_directory(
+        'navigation_experiments_mc_bts_pddl_base')
     pilot_launch_dir = os.path.join(pilot_dir, 'launch')
 
     # Create the launch configuration variables
@@ -42,7 +43,6 @@ def generate_launch_description():
     default_bt_xml_filename = LaunchConfiguration('default_bt_xml_filename')
     autostart = LaunchConfiguration('autostart')
     cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
-
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
@@ -114,20 +114,20 @@ def generate_launch_description():
                               'map_subscribe_transient_local': 'true',
                               'cmd_vel_topic': cmd_vel_topic}.items()),
 
-        Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
-                        {'node_names': ['map_server',
-                                        'amcl',
-                                        'controller_server',
-                                        'planner_server',
-                                        'recoveries_server',
-                                        'bt_navigator',
-                                        'waypoint_follower']}]),
+        # Node(
+        #     package='nav2_lifecycle_manager',
+        #     executable='lifecycle_manager',
+        #     name='lifecycle_manager',
+        #     output='screen',
+        #     parameters=[{'use_sim_time': use_sim_time},
+        #                 {'autostart': autostart},
+        #                 {'node_names': ['map_server',
+        #                                 'amcl',
+        #                                 'controller_server',
+        #                                 'planner_server',
+        #                                 'recoveries_server',
+        #                                 'bt_navigator',
+        #                                 'waypoint_follower']}]),
     ])
 
     # Create the launch description and populate

@@ -49,6 +49,8 @@ public:
       std::bind(&MoveRechargeStation::current_pos_callback, this, _1));
 
     this->declare_parameter("metacontrol", true);
+    use_metacontrol = false;
+    nav2_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   }
 
   void current_pos_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -56,10 +58,8 @@ public:
     current_pos_ = msg->pose.pose;
   }
 
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State & previous_state)
-  {
-    send_feedback(0.0, "Move starting");
+  void send_mc_navigation_goal(){
+    RCLCPP_INFO(get_logger(), "Send nav goal with Metacontrol");
     navigation_action_client_ =
       rclcpp_action::create_client<NavigateToPoseQos>(
       shared_from_this(),
@@ -75,15 +75,16 @@ public:
 
     RCLCPP_INFO(get_logger(), "Navigation action server ready");
 
-    auto wp_to_navigate = get_arguments()[2];  // The goal is in the 3rd argument of the action
-    RCLCPP_INFO(get_logger(), "Start navigation to [%s]", wp_to_navigate.c_str());
+    auto wp_to_navigate_ = get_arguments()[2];  // The goal is in the 3rd argument of the action
 
-    goal_pos_ = waypoints_[wp_to_navigate];
+    RCLCPP_INFO(get_logger(), "Request navigation to [%s]", wp_to_navigate_.c_str());
+
+    goal_pos_ = waypoints_[wp_to_navigate_];
     navigation_goal_.pose = goal_pos_;
     navigation_goal_.qos_expected.objective_type = "f_navigate"; // should be mros_goal->qos_expected.objective_type = "f_navigate";
     diagnostic_msgs::msg::KeyValue energy_qos;
     energy_qos.key = "energy";
-    energy_qos.value = "0.5";
+    energy_qos.value = "0.7";
     diagnostic_msgs::msg::KeyValue safety_qos;
     safety_qos.key = "safety";
     safety_qos.value = "0.5";
@@ -96,8 +97,54 @@ public:
       rclcpp_action::Client<NavigateToPoseQos>::SendGoalOptions();
 
     send_goal_options.feedback_callback = [this](
-      NavigationGoalHandle::SharedPtr,
-      NavigationFeedback feedback) {
+    NavigationGoalHandle::SharedPtr,
+    NavigationFeedback feedback) {
+      send_feedback(
+        std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
+        "Move running");
+    };
+
+    send_goal_options.result_callback = [this](auto) {
+      finish(true, 1.0, "Move completed");
+    };
+
+    future_navigation_goal_handle_ =
+      navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
+    RCLCPP_INFO(get_logger(), "Start navigation to [%s]", wp_to_navigate_.c_str());
+  }
+
+  void send_nav2_goal(){
+    nav2_client_ =
+      rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
+      shared_from_this(),
+      "navigate_to_pose");
+
+    bool is_action_server_ready = false;
+    do {
+      RCLCPP_INFO(get_logger(), "Waiting for navigation action server...");
+
+      is_action_server_ready =
+        nav2_client_->wait_for_action_server(std::chrono::seconds(5));
+    } while (!is_action_server_ready);
+
+    RCLCPP_INFO(get_logger(), "Navigation action server ready");
+
+    auto wp_to_navigate = get_arguments()[2];  // The goal is in the 3rd argument of the action
+    RCLCPP_INFO(get_logger(), "Request navigation to [%s]", wp_to_navigate.c_str());
+
+    goal_pos_ = waypoints_[wp_to_navigate];
+    nav2_goal_.pose = goal_pos_;
+    nav2_goal_.pose = goal_pos_;
+    nav2_goal_.pose.header.stamp = now();
+
+    dist_to_move = getDistance(goal_pos_.pose, current_pos_);
+
+    auto send_goal_options =
+      rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+
+    send_goal_options.feedback_callback = [this](
+      Nav2GoalHandle::SharedPtr,
+      Nav2Feedback feedback) {
         send_feedback(
           std::min(1.0, std::max(0.0, 1.0 - (feedback->distance_remaining / dist_to_move))),
           "Move running");
@@ -107,9 +154,21 @@ public:
         finish(true, 1.0, "Move completed");
       };
 
-    future_navigation_goal_handle_ =
-      navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
+    future_nav2_goal_handle_ =
+      nav2_client_->async_send_goal(nav2_goal_, send_goal_options);
+    RCLCPP_INFO(get_logger(), "Start navigation to [%s]", wp_to_navigate.c_str());
+  }
 
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_activate(const rclcpp_lifecycle::State & previous_state)
+  {
+    send_feedback(0.0, "Move starting");
+    use_metacontrol = this->get_parameter("metacontrol").as_bool();
+    if(use_metacontrol == true){
+      send_mc_navigation_goal();
+    } else{
+      send_nav2_goal();
+    }
     return ActionExecutorClient::on_activate(previous_state);
   }
 
@@ -132,6 +191,11 @@ private:
   using NavigationFeedback =
     const std::shared_ptr<const NavigateToPoseQos::Feedback>;
 
+  using Nav2GoalHandle =
+    rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
+  using Nav2Feedback =
+    const std::shared_ptr<const nav2_msgs::action::NavigateToPose::Feedback>;
+
   rclcpp_action::Client<NavigateToPoseQos>::SharedPtr navigation_action_client_;
   std::shared_future<NavigationGoalHandle::SharedPtr> future_navigation_goal_handle_;
   NavigationGoalHandle::SharedPtr navigation_goal_handle_;
@@ -141,9 +205,14 @@ private:
   geometry_msgs::msg::PoseStamped goal_pos_;
   NavigateToPoseQos::Goal navigation_goal_;
 
-  std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
-  std::shared_ptr<rclcpp::Node> private_node_;
   double dist_to_move;
+
+  bool use_metacontrol;
+  // NAV2
+  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav2_client_;
+  std::shared_future<Nav2GoalHandle::SharedPtr> future_nav2_goal_handle_;
+  rclcpp::CallbackGroup::SharedPtr nav2_cb_group_;
+  nav2_msgs::action::NavigateToPose::Goal nav2_goal_;
 };
 
 int main(int argc, char ** argv)
@@ -154,7 +223,9 @@ int main(int argc, char ** argv)
   node->set_parameter(rclcpp::Parameter("action_name", "move_recharge_station"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
-  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+  executor.spin();
 
   rclcpp::shutdown();
 

@@ -14,6 +14,8 @@
 
 #include <memory>
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
+
 #include "plansys2_msgs/msg/action_execution_info.hpp"
 #include "plansys2_msgs/msg/plan.hpp"
 
@@ -25,6 +27,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+using namespace std::placeholders;
+
 class PatrollingController : public rclcpp::Node
 {
 public:
@@ -32,14 +36,32 @@ public:
   PatrollingController()
   : rclcpp::Node("patrolling_controller")
   {
-  }
-
-  void init()
-  {
     domain_expert_ = std::make_shared<plansys2::DomainExpertClient>();
     planner_client_ = std::make_shared<plansys2::PlannerClient>();
     problem_expert_ = std::make_shared<plansys2::ProblemExpertClient>();
     executor_client_ = std::make_shared<plansys2::ExecutorClient>();
+
+    diagnostics_sub_ = create_subscription<diagnostic_msgs::msg::DiagnosticArray>(
+      "/diagnostics",
+      10,
+      std::bind(&PatrollingController::diagnostics_cb, this, _1));
+  }
+
+  void diagnostics_cb(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg)
+  {
+    for(auto diagnostic_status : msg->status){
+      if (diagnostic_status.message == "Component status"){
+        auto component = diagnostic_status.values[0].key;
+        auto value = diagnostic_status.values[0].value;
+        if (component == "battery" && value == "FALSE"){
+          problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
+          problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
+          problem_expert_->removePredicate(plansys2::Predicate("(battery_charged r2d2)"));
+        } else if(component == "laser_resender" && value == "FALSE"){
+          problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
+        }
+      }
+    }
   }
 
   void step(){
@@ -68,6 +90,7 @@ public:
       }
       std::cout << "[" << action_feedback.action << arguments_str <<
         action_feedback.completion * 100.0 << "%]";
+      std::cout << std::endl;
     }
     std::cout << std::endl;
   }
@@ -106,15 +129,13 @@ private:
   std::shared_ptr<plansys2::PlannerClient> planner_client_;
   std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
   std::shared_ptr<plansys2::ExecutorClient> executor_client_;
-
+  rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_sub_;
 };
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<PatrollingController>();
-
-  node->init();
 
   rclcpp::Rate rate(5);
   node->execute_plan();

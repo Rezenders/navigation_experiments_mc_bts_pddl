@@ -48,13 +48,6 @@ def generate_launch_description():
         output='screen',
         parameters=[])
 
-    patrol_cmd = Node(
-        package='navigation_experiments_mc_pddl',
-        executable='patrol_action_node',
-        name='patrol_action_node',
-        output='screen',
-        parameters=[])
-
     recharge_cmd = Node(
         package='navigation_experiments_mc_pddl',
         executable='recharge_action_node',
@@ -86,7 +79,6 @@ def generate_launch_description():
     ld.add_action(plansys2_cmd)
 
     ld.add_action(move_cmd)
-    ld.add_action(patrol_cmd)
     ld.add_action(recharge_cmd)
     ld.add_action(move_recharge_station_cmd)
     # ld.add_action(pddl_controller_cmd)

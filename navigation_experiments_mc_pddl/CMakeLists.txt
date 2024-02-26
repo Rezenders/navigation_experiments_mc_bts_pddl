@@ -36,9 +36,6 @@ set(dependencies
 add_executable(move_action_node src/move_action_node.cpp)
 ament_target_dependencies(move_action_node ${dependencies})
 
-add_executable(patrol_action_node src/patrol_action_node.cpp)
-ament_target_dependencies(patrol_action_node ${dependencies})
-
 add_executable(recharge_action_node src/recharge_action_node.cpp)
 ament_target_dependencies(recharge_action_node ${dependencies})
 
@@ -57,21 +54,16 @@ ament_target_dependencies(recover_nav_sensor_node ${dependencies})
 add_executable(patrolling_controller_node src/patrolling_controller_node.cpp)
 ament_target_dependencies(patrolling_controller_node ${dependencies})
 
-# add_executable(patrolling_reconfig_controller_node src/patrolling_reconfig_controller_node.cpp)
-# ament_target_dependencies(patrolling_reconfig_controller_node ${dependencies})
-
 install(DIRECTORY launch pddl DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
   move_action_node
-  patrol_action_node
   recharge_action_node
   move_recharge_station_action_node
   degraded_move_action_node
   reconfigure_action_node
   recover_nav_sensor_node
   patrolling_controller_node
-  # patrolling_reconfig_controller_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
