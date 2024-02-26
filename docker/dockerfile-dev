@@ -1,0 +1,108 @@
+FROM ros:foxy
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt update && apt install -y --no-install-recommends\
+  vim \
+  locales \
+  dirmngr \
+  gnupg2 \
+  git \
+  wget \
+  build-essential \
+  libboost-all-dev \
+  python3-pip \
+  python3-vcstool \
+  python3-rosdep \
+  python-is-python3 \
+  python3-colcon-common-extensions \
+  && rm -rf /var/lib/apt/lists/
+
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+# setup keys
+RUN set -eux; \
+	key='D2486D2DD83DB69272AFE98867170598AF249743'; \
+	export GNUPGHOME="$(mktemp -d)"; \
+	gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
+	mkdir -p /usr/share/keyrings; \
+	gpg --batch --export "$key" > /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg; \
+	gpgconf --kill all; \
+  	rm -rf "$GNUPGHOME"
+
+# setup sources.list
+RUN . /etc/os-release \
+    && echo "deb [ signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg ] http://packages.osrfoundation.org/gazebo/$ID-stable $VERSION_CODENAME main" > /etc/apt/sources.list.d/gazebo-latest.list
+
+# install packages
+RUN apt-get update && apt-get install -q -y --no-install-recommends \
+    binutils \
+    mesa-utils \
+    x-window-system \
+    && rm -rf /var/lib/apt/lists/*
+
+# install gazebo packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gazebo11=11.14.0-1* \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 11345
+
+RUN apt update && apt install -y --no-install-recommends\
+  ros-foxy-urdf \
+  ros-foxy-laser-geometry \
+  ros-perception \
+  ros-foxy-gazebo-ros \
+  ros-foxy-gazebo-ros-pkgs \
+  ros-foxy-test-msgs \
+  ros-foxy-behaviortree-cpp-v3 \
+  ros-foxy-map-msgs \
+  ros-foxy-rviz-common \
+  ros-foxy-rviz-default-plugins \
+  ros-foxy-angles \
+  ros-foxy-nav2-* \
+  ros-foxy-rviz2 \
+  ros-foxy-rclcpp-cascade-lifecycle \
+  ros-foxy-cascade-lifecycle-msgs \
+  ros-foxy-slam-toolbox \
+  ros-foxy-rqt-gui-cpp \
+  ros-foxy-tf2 \
+  ros-foxy-tf2-msgs \
+  ros-foxy-popf \
+  ros-foxy-plansys2-* \
+  && rm -rf /var/lib/apt/lists/
+
+WORKDIR /mros_reasoner/src
+COPY resources.repos resources.repos
+RUN vcs import < resources.repos
+
+# COPY navigation_experiments_mc_bts/ navigation_experiments_mc_bts_pddl/navigation_experiments_mc_bts/
+# COPY navigation_experiments_mc_bts_pddl_base/ navigation_experiments_mc_bts_pddl/navigation_experiments_mc_bts_pddl_base/
+# COPY navigation_experiments_mc_bts_pddl_log/ navigation_experiments_mc_bts_pddl/navigation_experiments_mc_bts_pddl_log/
+# COPY navigation_experiments_mc_pddl/ navigation_experiments_mc_bts_pddl/navigation_experiments_mc_pddl/
+
+
+WORKDIR /mros_reasoner
+RUN [ "/bin/bash","-c","source /opt/ros/foxy/setup.bash \
+            && apt update && rosdep update \
+            && rosdep install -y -r -q --from-paths src --ignore-src --rosdistro foxy --skip-keys='turtlebot2_drivers map_server astra_camera amcl' \
+            && rm -rf /var/lib/apt/lists/"]
+
+RUN [ "/bin/bash","-c","source /opt/ros/foxy/setup.bash \
+            && colcon build --symlink-install"]
+
+ENV NVIDIA_VISIBLE_DEVICES \
+   ${NVIDIA_VISIBLE_DEVICES:-all}
+ENV NVIDIA_DRIVER_CAPABILITIES \
+   ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics
+
+ENV GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/mros_reasoner/src/turtlebot3/turtlebot3_simulations/turtlebot3_gazebo/models:/mros_reasoner/src/navigation_experiments_mc_bts_pddl/navigation_experiments_mc_bts_pddl_base/worlds/models
+ENV TURTLEBOT3_MODEL=${TB3_MODEL}
+
+COPY docker/entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]

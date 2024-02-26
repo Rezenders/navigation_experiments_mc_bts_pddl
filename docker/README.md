@@ -35,5 +35,20 @@ docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gp
 ```
 
 ```bash
+docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 launch navigation_experiments_mc_pddl pddl_reconfig_controller_launch.py
+```
+
+```bash
 docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 run navigation_experiments_mc_pddl patrolling_controller_node
+```
+
+
+## Dev
+
+```bash
+docker run -it -e DISPLAY=$DISPLAY -v="/tmp/.gazebo/:/root/.gazebo/" -v "$HOME/mc_iros2021_results:/root/iros2021_results" -v /tmp/.X11-unix:/tmp/.X11-unix:ro -v "$HOME/mros_experiments_ws/src/navigation_experiments_mc_bts_pddl:/mros_reasoner/src/navigation_experiments_mc_bts_pddl" --name mros_exp --gpus all mros_exp:dev bash
+```
+
+```bash
+docker exec -it mros_exp bash
 ```
