@@ -77,19 +77,20 @@ mode
     )
 )
 
-(:durative-action degraded_move
+(:durative-action move_degraded
     :parameters (?r - robot ?wp1 ?wp2 - waypoint ?m - mode)
     :duration ( = ?duration 6)
     :condition (and
-        (at start(robot_at ?r ?wp1))
-        (over all(battery_charged ?r))
-        (over all(nav_sensor ?r))
-        (over all(degraded_mode ?m))
-        (over all(current_mode ?m))
+        (at start (robot_at ?r ?wp1))
+        (at start (path ?wp1 ?wp2))
+        (over all (battery_charged ?r))
+        (over all (current_mode ?m))
+        (over all (degraded_mode ?m))
     )
     :effect (and
         (at start(not(robot_at ?r ?wp1)))
         (at end(robot_at ?r ?wp2))
+        (at end(patrolled ?r ?wp2))
     )
 )
 
@@ -104,17 +105,4 @@ mode
         (at end(current_mode ?m2))
     )
 )
-
-(:durative-action recover_nav_sensor
-    :parameters (?r - robot ?m - mode)
-    :duration ( = ?duration 1)
-    :condition (and
-        (at start(degraded_mode ?m))
-        (at start(current_mode ?m))
-    )
-    :effect (and
-        (at end(nav_sensor ?r))
-    )
-)
-
 );; end Domain ;;;;;;;;;;;;;;;;;;;;;;;;
