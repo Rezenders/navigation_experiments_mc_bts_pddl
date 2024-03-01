@@ -5,7 +5,6 @@
         robot
         waypoint
     )
-
     (:predicates
         (path ?wp1 ?wp2 - waypoint)
         (robot_at ?r - robot ?wp - waypoint)
@@ -14,11 +13,9 @@
         (battery_charged ?r - robot)
         (battery_low ?r - robot)
     )
-
     (:functions
     )
-
-    (:durative-action move
+    (:durative-action navigate_to_pose
         :parameters (?r - robot ?wp1 ?wp2 - waypoint)
         :duration ( = ?duration 5)
         :condition (and
@@ -32,8 +29,7 @@
             (at end(patrolled ?r ?wp2))
         )
     )
-
-    (:durative-action move_recharge_station
+    (:durative-action navigate_to_recharge_station
         :parameters (?r - robot ?wp1 ?wp2 - waypoint)
         :duration ( = ?duration 5)
         :condition (and
@@ -47,7 +43,6 @@
             (at end(robot_at ?r ?wp2))
         )
     )
-
     (:durative-action recharge
         :parameters (?r - robot ?wp - waypoint)
         :duration ( = ?duration 10)

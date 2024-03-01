@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <math.h>
+
 #include <memory>
+#include <string>
+#include <map>
 #include <algorithm>
 
-#include "plansys2_executor/ActionExecutorClient.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -23,21 +26,63 @@
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
+
+#include "plansys2_executor/ActionExecutorClient.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+
+#include "lifecycle_msgs/srv/get_state.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
 using NavigateToPoseQos = mros2_msgs::action::NavigateToPoseQos;
 
-class MoveRechargeStation : public plansys2::ActionExecutorClient
+class MoveAction : public plansys2::ActionExecutorClient
 {
 public:
-  MoveRechargeStation()
-  : plansys2::ActionExecutorClient("MoveRechargeStation", 1s)
+  MoveAction()
+  : plansys2::ActionExecutorClient("move", 500ms)
   {
     geometry_msgs::msg::PoseStamped wp;
     wp.header.frame_id = "/map";
+    wp.pose.position.x = 1.0;
+    wp.pose.position.y = -1.0;
+    wp.pose.position.z = 0.0;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
+
+    waypoints_["wp1"] = wp;
+
+    wp.pose.position.x = -1.0;
+    wp.pose.position.y = 1.0;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI);
+    waypoints_["wp2"] = wp;
+
+    wp.pose.position.x = -3.5;
+    wp.pose.position.y = 1.0;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI);
+    waypoints_["wp3"] = wp;
+
+    wp.pose.position.x = -6.25;
+    wp.pose.position.y = 2.66;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
+    waypoints_["wp4"] = wp;
+
+    wp.pose.position.x = -6.40;
+    wp.pose.position.y = -2.81;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
+    waypoints_["wp5"] = wp;
+
+    wp.pose.position.x = -6.25;
+    wp.pose.position.y = 2.66;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
+    waypoints_["wp6"] = wp;
+
+    wp.pose.position.x = -1.5;
+    wp.pose.position.y = 1.5;
+    wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
+    waypoints_["wp7"] = wp;
+
     wp.pose.position.x = 4.0;
     wp.pose.position.y = -3.0;
     wp.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
@@ -46,7 +91,12 @@ public:
     pos_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "/amcl_pose",
       10,
-      std::bind(&MoveRechargeStation::current_pos_callback, this, _1));
+      std::bind(&MoveAction::current_pos_callback, this, _1));
+
+    waypoint_follower_state_ = "inactive";
+    client_cb_group_ =  this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    waypoint_follower_state_client_ = create_client<lifecycle_msgs::srv::GetState>(
+      "/waypoint_follower/get_state", rmw_qos_profile_services_default, client_cb_group_);
 
     this->declare_parameter("metacontrol", true);
     use_metacontrol = false;
@@ -58,8 +108,26 @@ public:
     current_pos_ = msg->pose.pose;
   }
 
+  std::string get_waypoint_follower_state(){
+    auto request = std::make_shared<lifecycle_msgs::srv::GetState::Request>();
+    while (!waypoint_follower_state_client_->wait_for_service(1s))
+    {
+      if (!rclcpp::ok())
+      {
+        RCLCPP_ERROR(get_logger(), "Interrupted while waiting for the service. Exiting.");
+        return "";
+      }
+      RCLCPP_INFO(get_logger(), "service not available, waiting again...");
+    }
+    auto result_future = waypoint_follower_state_client_->async_send_request(request);
+    std::future_status status = result_future.wait_for(10s);  // timeout to guarantee a graceful finish
+    if (status == std::future_status::ready) {
+      return result_future.get()->current_state.label;
+    }
+    return "";
+  }
+
   void send_mc_navigation_goal(){
-    RCLCPP_INFO(get_logger(), "Send nav goal with Metacontrol");
     navigation_action_client_ =
       rclcpp_action::create_client<NavigateToPoseQos>(
       shared_from_this(),
@@ -75,7 +143,7 @@ public:
 
     RCLCPP_INFO(get_logger(), "Navigation action server ready");
 
-    auto wp_to_navigate_ = get_arguments()[2];  // The goal is in the 3rd argument of the action
+    wp_to_navigate_ = get_arguments()[2];  // The goal is in the 3rd argument of the action
 
     RCLCPP_INFO(get_logger(), "Request navigation to [%s]", wp_to_navigate_.c_str());
 
@@ -105,15 +173,24 @@ public:
     };
 
     send_goal_options.result_callback = [this](auto) {
+      // TODO: check if navigation succeed or failed
       finish(true, 1.0, "Move completed");
     };
 
     future_navigation_goal_handle_ =
       navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
+
     RCLCPP_INFO(get_logger(), "Start navigation to [%s]", wp_to_navigate_.c_str());
   }
 
   void send_nav2_goal(){
+    waypoint_follower_state_ = get_waypoint_follower_state();
+    while (waypoint_follower_state_ != "active") {
+      waypoint_follower_state_ = get_waypoint_follower_state();
+      RCLCPP_INFO(get_logger(), "Waiting for waypoint_follower... %s", waypoint_follower_state_.c_str());
+      rclcpp::sleep_for(1s);
+    }
+
     nav2_client_ =
       rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
       shared_from_this(),
@@ -151,8 +228,8 @@ public:
       };
 
     send_goal_options.result_callback = [this](auto) {
-        finish(true, 1.0, "Move completed");
-      };
+      finish(true, 1.0, "Move completed");
+    };
 
     future_nav2_goal_handle_ =
       nav2_client_->async_send_goal(nav2_goal_, send_goal_options);
@@ -162,14 +239,27 @@ public:
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & previous_state)
   {
-    send_feedback(0.0, "Move starting");
     use_metacontrol = this->get_parameter("metacontrol").as_bool();
+    send_feedback(0.0, "Move starting");
     if(use_metacontrol == true){
       send_mc_navigation_goal();
     } else{
       send_nav2_goal();
     }
+
     return ActionExecutorClient::on_activate(previous_state);
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_deactivate(const rclcpp_lifecycle::State & previous_state)
+  {
+    if(use_metacontrol){
+      navigation_action_client_->async_cancel_all_goals();
+      return ActionExecutorClient::on_deactivate(previous_state);
+    }
+    nav2_client_->async_cancel_all_goals();
+
+   return ActionExecutorClient::on_deactivate(previous_state);
   }
 
 private:
@@ -180,9 +270,7 @@ private:
       (pos1.position.y - pos2.position.y) * (pos1.position.y - pos2.position.y));
   }
 
-  void do_work()
-  {
-  }
+  void do_work() { }
 
   std::map<std::string, geometry_msgs::msg::PoseStamped> waypoints_;
 
@@ -206,6 +294,7 @@ private:
   NavigateToPoseQos::Goal navigation_goal_;
 
   double dist_to_move;
+  std::string wp_to_navigate_;
 
   bool use_metacontrol;
   // NAV2
@@ -213,14 +302,18 @@ private:
   std::shared_future<Nav2GoalHandle::SharedPtr> future_nav2_goal_handle_;
   rclcpp::CallbackGroup::SharedPtr nav2_cb_group_;
   nav2_msgs::action::NavigateToPose::Goal nav2_goal_;
+
+  std::string waypoint_follower_state_;
+  rclcpp::Client<lifecycle_msgs::srv::GetState>::SharedPtr waypoint_follower_state_client_;
+  rclcpp::CallbackGroup::SharedPtr client_cb_group_;
 };
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<MoveRechargeStation>();
+  auto node = std::make_shared<MoveAction>();
 
-  node->set_parameter(rclcpp::Parameter("action_name", "move_recharge_station"));
+  // node->set_parameter(rclcpp::Parameter("action_name", "move"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
   rclcpp::executors::MultiThreadedExecutor executor;

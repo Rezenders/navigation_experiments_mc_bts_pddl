@@ -37,6 +37,7 @@ private:
   void do_work()
   {
     if (progress_ < 1.0) {
+      RCLCPP_INFO(get_logger(), "Charing battery %f complete", progress_*100);
       progress_ += 0.05;
       send_feedback(progress_, "Charge running");
     } else {

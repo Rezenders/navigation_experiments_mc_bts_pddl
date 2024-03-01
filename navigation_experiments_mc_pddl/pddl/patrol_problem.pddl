@@ -33,6 +33,13 @@
   (path wp_r wp7)
 
   (path wp_failure wp_r)
+  (path wp_failure wp1)
+  (path wp_failure wp2)
+  (path wp_failure wp3)
+  (path wp_failure wp4)
+  (path wp_failure wp5)
+  (path wp_failure wp6)
+  (path wp_failure wp7)
 )
 ( :goal
   ( and

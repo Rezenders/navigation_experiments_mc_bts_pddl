@@ -3,18 +3,21 @@
 ( :objects
 	r2d2 - robot
   wp1 wp2 wp3 wp4 wp5 wp6 wp7 wp_r wp_failure - waypoint
-  f_start_mode f_normal_mode f_energy_saving_mode f_degraded_mode - mode
+  f_start_mode f_normal_mode f_energy_saving_mode f_degraded_mode f_degraded_energy_save_mode - mode
 )
 ( :init
   (robot_at r2d2 wp_r)
   (recharge_station wp_r)
   (battery_charged r2d2)
-  (nav_sensor r2d2)
+
+  (laser_ok r2d2)
+  (camera_ok r2d2)
 
   (current_mode f_start_mode)
   (normal_mode f_normal_mode)
   (battery_low_mode f_energy_saving_mode)
   (degraded_mode f_degraded_mode)
+  (degraded_energy_mode f_degraded_energy_save_mode)
 
   (path wp1 wp2)
   (path wp2 wp3)
@@ -40,6 +43,13 @@
   (path wp_r wp7)
 
   (path wp_failure wp_r)
+  (path wp_failure wp1)
+  (path wp_failure wp2)
+  (path wp_failure wp3)
+  (path wp_failure wp4)
+  (path wp_failure wp5)
+  (path wp_failure wp6)
+  (path wp_failure wp7)
 )
 ( :goal
   ( and

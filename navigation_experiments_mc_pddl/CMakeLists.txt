@@ -33,17 +33,11 @@ set(dependencies
     diagnostic_msgs
 )
 
-add_executable(move_action_node src/move_action_node.cpp)
-ament_target_dependencies(move_action_node ${dependencies})
+add_executable(navigate_to_pose_action_node src/navigate_to_pose_action_node.cpp)
+ament_target_dependencies(navigate_to_pose_action_node ${dependencies})
 
 add_executable(recharge_action_node src/recharge_action_node.cpp)
 ament_target_dependencies(recharge_action_node ${dependencies})
-
-add_executable(move_recharge_station_action_node src/move_recharge_station_action_node.cpp)
-ament_target_dependencies(move_recharge_station_action_node ${dependencies})
-
-add_executable(degraded_move_action_node src/degraded_move_action_node.cpp)
-ament_target_dependencies(degraded_move_action_node ${dependencies})
 
 add_executable(reconfigure_action_node src/reconfigure_action_node.cpp)
 ament_target_dependencies(reconfigure_action_node ${dependencies})
@@ -57,10 +51,8 @@ ament_target_dependencies(patrolling_controller_node ${dependencies})
 install(DIRECTORY launch pddl DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS
-  move_action_node
+  navigate_to_pose_action_node
   recharge_action_node
-  move_recharge_station_action_node
-  degraded_move_action_node
   reconfigure_action_node
   recover_nav_sensor_node
   patrolling_controller_node

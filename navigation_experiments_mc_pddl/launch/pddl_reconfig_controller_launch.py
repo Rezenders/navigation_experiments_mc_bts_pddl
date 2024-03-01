@@ -41,12 +41,49 @@ def generate_launch_description():
         )
 
     # Specify the actions
-    move_cmd = Node(
+    navigate_to_pose = Node(
         package='navigation_experiments_mc_pddl',
-        executable='move_action_node',
-        name='move_action_node',
+        executable='navigate_to_pose_action_node',
+        name='navigate_to_pose_action_node',
         output='screen',
-        parameters=[{'metacontrol': False}])
+        parameters=[{
+            'metacontrol': False,
+            'action_name': 'navigate_to_pose'
+        }]
+    )
+
+    navigate_to_recharge_station = Node(
+        package='navigation_experiments_mc_pddl',
+        executable='navigate_to_pose_action_node',
+        name='navigate_to_recharge_station_action_node',
+        output='screen',
+        parameters=[{
+            'metacontrol': False,
+            'action_name': 'navigate_to_recharge_station'
+        }]
+    )
+
+    navigate_to_recharge_station_degraded = Node(
+        package='navigation_experiments_mc_pddl',
+        executable='navigate_to_pose_action_node',
+        name='navigate_to_recharge_station_degraded_action_node',
+        output='screen',
+        parameters=[{
+            'metacontrol': False,
+            'action_name': 'navigate_to_recharge_station_degraded'
+        }]
+    )
+
+    navigate_to_pose_degraded = Node(
+        package='navigation_experiments_mc_pddl',
+        executable='navigate_to_pose_action_node',
+        name='navigate_to_pose_degraded_action_node',
+        output='screen',
+        parameters=[{
+            'metacontrol': False,
+            'action_name': 'navigate_to_pose_degraded'
+        }]
+    )
 
     recharge_cmd = Node(
         package='navigation_experiments_mc_pddl',
@@ -55,19 +92,12 @@ def generate_launch_description():
         output='screen',
         parameters=[])
 
-    move_recharge_station_cmd = Node(
-        package='navigation_experiments_mc_pddl',
-        executable='move_recharge_station_action_node',
-        name='move_recharge_station_action_node',
-        output='screen',
-        parameters=[{'metacontrol': False}])
-
     reconfigure_cmd = Node(
         package='navigation_experiments_mc_pddl',
         executable='reconfigure_action_node',
         name='reconfigure_action_node',
         output='screen',
-        parameters=[])
+        parameters=[{'action_name': 'reconfigure_system'}])
 
     # pddl_controller_cmd = Node(
     #    package='navigation_experiments_mc_pddl',
@@ -85,9 +115,11 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(plansys2_cmd)
 
-    ld.add_action(move_cmd)
+    ld.add_action(navigate_to_pose)
+    ld.add_action(navigate_to_recharge_station)
+    ld.add_action(navigate_to_recharge_station_degraded)
+    ld.add_action(navigate_to_pose_degraded)
     ld.add_action(recharge_cmd)
-    ld.add_action(move_recharge_station_cmd)
     ld.add_action(reconfigure_cmd)
     # ld.add_action(pddl_controller_cmd)
     return ld

@@ -31,7 +31,8 @@ import lifecycle_msgs.msg
 def generate_launch_description():
     # Get the launch directory
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    pilot_bringup_dir = get_package_share_directory('navigation_experiments_mc_bts_pddl_base')
+    pilot_bringup_dir = get_package_share_directory(
+        'navigation_experiments_mc_bts_pddl_base')
     launch_dir = os.path.join(nav2_bringup_dir, 'launch')
 
     # Create the launch configuration variables

@@ -45,6 +45,9 @@ public:
       "/diagnostics",
       10,
       std::bind(&PatrollingController::diagnostics_cb, this, _1));
+
+    this->declare_parameter("metacontrol", true);
+    use_metacontrol = this->get_parameter("metacontrol").as_bool();
   }
 
   void diagnostics_cb(const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg)
@@ -57,8 +60,10 @@ public:
           problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
           problem_expert_->addPredicate(plansys2::Predicate("(battery_low r2d2)"));
           problem_expert_->removePredicate(plansys2::Predicate("(battery_charged r2d2)"));
-        } else if(component == "laser_resender" && value == "FALSE"){
-          problem_expert_->removePredicate(plansys2::Predicate("(nav_sensor r2d2)"));
+        } else if(component == "laser_resender" && value == "FALSE" && use_metacontrol == false){
+          problem_expert_->addPredicate(plansys2::Predicate("(robot_at r2d2 wp_failure)"));
+          problem_expert_->addPredicate(plansys2::Predicate("(laser_failed r2d2)"));
+          problem_expert_->removePredicate(plansys2::Predicate("(laser_ok r2d2)"));
         }
       }
     }
@@ -92,7 +97,7 @@ public:
         action_feedback.completion * 100.0 << "%]";
       std::cout << std::endl;
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
   }
 
 void execute_plan(){
@@ -130,6 +135,7 @@ private:
   std::shared_ptr<plansys2::ProblemExpertClient> problem_expert_;
   std::shared_ptr<plansys2::ExecutorClient> executor_client_;
   rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_sub_;
+  bool use_metacontrol;
 };
 
 int main(int argc, char ** argv)

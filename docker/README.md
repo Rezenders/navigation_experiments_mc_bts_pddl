@@ -30,18 +30,23 @@ docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gp
 
 ### PDDL
 
+With metacontrol:
 ```bash
 docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 launch navigation_experiments_mc_pddl pddl_controller_launch.py
-```
-
-```bash
-docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 launch navigation_experiments_mc_pddl pddl_reconfig_controller_launch.py
 ```
 
 ```bash
 docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 run navigation_experiments_mc_pddl patrolling_controller_node
 ```
 
+Without metacontrol:
+```bash
+docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 run navigation_experiments_mc_pddl patrolling_controller_node --ros-args -p metacontrol:=false
+```
+
+```bash
+docker run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --gpus all mros_exp:foxy ros2 launch navigation_experiments_mc_pddl pddl_reconfig_controller_launch.py
+```
 
 ## Dev
 

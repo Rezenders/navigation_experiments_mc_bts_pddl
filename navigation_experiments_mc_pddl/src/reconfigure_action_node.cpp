@@ -109,7 +109,7 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
   auto node = std::make_shared<ReconfigureAction>();
 
-  node->set_parameter(rclcpp::Parameter("action_name", "reconfig_system"));
+  // node->set_parameter(rclcpp::Parameter("action_name", "reconfig_system"));
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
 
   rclcpp::executors::MultiThreadedExecutor executor;
